@@ -1,0 +1,16 @@
+node_modules
+frontend/node_modules
+
+.env
+uploads/images-*.png
+uploads/images-*.jpg
+uploads/images-*.jpeg
+uploads/images-*.webp
+uploads/images-*.avif
+uploads/images-*.gif
+
+*.log
+logs
+assets/logo.txt
+notes
+notes/*.md
