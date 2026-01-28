@@ -50,7 +50,10 @@ const getDocumentationBySlugName = asyncHandler(async (req, res) => {
     throw new APIError(400, "Invalid Slug Found!");
   }
 
-  const query = { slug: req.params.slug, project: req.params.id.toString() };
+  const query = {
+    slug: req.params.slug.toString(),
+    project: req.params.id.toString(),
+  };
 
   const currentDocument = await Documentation.findOne(query).populate(
     "author",
@@ -176,7 +179,10 @@ const updateDocumentation = asyncHandler(async (req, res) => {
     return res.status(200).json(new APIResponse(200, "Nothing to update"));
   }
 
-  const query = { slug: req.params.slug, project: req.params.id.toString() };
+  const query = {
+    slug: req.params.slug.toString(),
+    project: req.params.id.toString(),
+  };
 
   // find if a documentation already exists with same slug within same project or not
   const documentationWithSlug = await Documentation.findOne(query).populate(
@@ -233,10 +239,12 @@ const deleteDocumentation = asyncHandler(async (req, res) => {
     throw new APIError(400, "Invalid slug id");
   }
 
-  const documentationWithSlug = await Documentation.findOne({
-    slug: req.params.slug,
-    project: req.params.id,
-  });
+  const query = {
+    slug: req.params.slug.toString(),
+    project: req.params.id.toString(),
+  };
+
+  const documentationWithSlug = await Documentation.findOne(query);
 
   if (!documentationWithSlug) {
     throw new APIError(404, "Documentation not found.");

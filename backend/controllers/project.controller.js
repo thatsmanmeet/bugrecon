@@ -41,13 +41,12 @@ const getProjectById = asyncHandler(async (req, res) => {
   return res.status(200).json(new APIResponse(200, "Project Fetched", project));
 });
 const createProject = asyncHandler(async (req, res) => {
-  const { name, description, icon, links } = req.body;
+  const { name, description, icon } = req.body;
 
   const sanitizedInputs = {
     name: name.toString(),
     description: description.toString(),
     icon: icon ? icon.toString() : "uploads/projects/default.png",
-    links: links || [],
   };
 
   console.log(sanitizedInputs);
@@ -60,7 +59,7 @@ const createProject = asyncHandler(async (req, res) => {
     name: sanitizedInputs.name,
     description: sanitizedInputs.description,
     icon: sanitizedInputs.icon || "uploads/projects/default.png",
-    links: sanitizedInputs.links || [],
+    links: [],
     admins: [req.user._id],
     members: [],
   });

@@ -118,6 +118,7 @@ const createIssue = asyncHandler(async (req, res) => {
   const sanitizedInputs = {
     title: title.trim().toString(),
     content: content.trim().toString(),
+    tags: Array.isArray(tags) ? tags.map((t) => t.trim().toString()) : [],
   };
 
   if (!sanitizedInputs.title || !sanitizedInputs.content) {
@@ -172,7 +173,7 @@ const createIssue = asyncHandler(async (req, res) => {
     title: sanitizedInputs.title,
     content: sanitizedInputs.content,
     status,
-    tags,
+    tags: sanitizedInputs.tags,
     severity,
     project: currentProject._id,
     createdBy: req.user._id,
