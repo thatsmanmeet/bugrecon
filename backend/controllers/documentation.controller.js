@@ -1,136 +1,148 @@
-import { Documentation } from '../models/documentation.model.js';
-import { Project } from '../models/project.model.js';
-import { APIError } from '../utils/APIError.js';
-import { APIResponse } from '../utils/APIResponse.js';
-import { asyncHandler } from '../utils/AsyncHandler.js';
-import validator from 'validator';
-import slug from 'slug';
+import { Documentation } from "../models/documentation.model.js";
+import { Project } from "../models/project.model.js";
+import { APIError } from "../utils/APIError.js";
+import { APIResponse } from "../utils/APIResponse.js";
+import { asyncHandler } from "../utils/AsyncHandler.js";
+import validator from "validator";
+import slug from "slug";
 
 // get documentation by project
 
 const getDocumentationByProject = asyncHandler(async (req, res) => {
   if (!validator.isMongoId(req.params.id)) {
-    throw new APIError(400, 'Invalid Project ID');
+    throw new APIError(400, "Invalid Project ID");
   }
 
   const currentProject = await Project.findById(req.params.id);
 
   if (!currentProject) {
-    throw new APIError(404, 'Project not found');
+    throw new APIError(404, "Project not found");
   }
 
   const isAdminOrProjectMember =
     currentProject.admins.some(
-      (userId) => userId.toString() === req.user._id.toString()
+      (userId) => userId.toString() === req.user._id.toString(),
     ) ||
     currentProject.members.some(
-      (userId) => userId.toString() === req.user._id.toString()
+      (userId) => userId.toString() === req.user._id.toString(),
     );
 
   if (!isAdminOrProjectMember) {
     throw new APIError(
       403,
-      'Unauthorized. Only admins & Members can view issues.'
+      "Unauthorized. Only admins & Members can view issues.",
     );
   }
 
-  const documentation = await Documentation.find({
-    project: req.params.id,
-  }).populate('author', 'name username');
+  const query = { project: req.params.id.toString() };
+
+  const documentation = await Documentation.find(query).populate(
+    "author",
+    "name username",
+  );
   return res
     .status(200)
-    .json(new APIResponse(200, 'Documentation Fetched', documentation));
+    .json(new APIResponse(200, "Documentation Fetched", documentation));
 });
 
 const getDocumentationBySlugName = asyncHandler(async (req, res) => {
   if (!validator.isSlug(req.params.slug)) {
-    throw new APIError(400, 'Invalid Slug Found!');
+    throw new APIError(400, "Invalid Slug Found!");
   }
-  const currentDocument = await Documentation.findOne({
-    slug: req.params.slug,
-    project: req.params.id,
-  }).populate('author', 'name username');
+
+  const query = { slug: req.params.slug, project: req.params.id.toString() };
+
+  const currentDocument = await Documentation.findOne(query).populate(
+    "author",
+    "name username",
+  );
 
   if (!currentDocument) {
-    throw new APIError(404, 'Documentation not found');
+    throw new APIError(404, "Documentation not found");
   }
 
   const currentProject = await Project.findById(currentDocument.project);
 
   if (!currentProject) {
-    throw new APIError(404, 'Project not found');
+    throw new APIError(404, "Project not found");
   }
 
   const isAdminOrProjectMember =
     currentProject.admins.some(
-      (userId) => userId.toString() === req.user._id.toString()
+      (userId) => userId.toString() === req.user._id.toString(),
     ) ||
     currentProject.members.some(
-      (userId) => userId.toString() === req.user._id.toString()
+      (userId) => userId.toString() === req.user._id.toString(),
     );
 
   if (!isAdminOrProjectMember) {
     throw new APIError(
       403,
-      'Unauthorized. Only admins & Members can view issues.'
+      "Unauthorized. Only admins & Members can view issues.",
     );
   }
 
   return res
     .status(200)
-    .json(new APIResponse(200, 'Documentation Fetched', currentDocument));
+    .json(new APIResponse(200, "Documentation Fetched", currentDocument));
 });
 
 const createDocumentation = asyncHandler(async (req, res) => {
   if (!validator.isMongoId(req.params.id)) {
-    throw new APIError(400, 'Invalid Project ID');
+    throw new APIError(400, "Invalid Project ID");
   }
 
   const { title, content } = req.body;
+  const sanitizedInputs = {
+    title: title.trim().toString(),
+    content: content.trim().toString(),
+  };
 
   if (!title || !content) {
-    throw new APIError(400, 'title and content is required');
+    throw new APIError(400, "title and content is required");
   }
 
-  const currentSlug = slug(title);
+  const currentSlug = slug(sanitizedInputs.title);
 
   // find if a documentation already exists with same slug within same project or not
 
-  const documentationWithSlug = await Documentation.findOne({
-    slug: currentSlug,
-    project: req.params.id,
-  });
+  const query = { slug: currentSlug, project: req.params.id.toString() };
+
+  const documentationWithSlug = await Documentation.findOne(query).populate(
+    "author",
+    "name username",
+  );
 
   if (documentationWithSlug) {
-    throw new APIError(409, 'Slug already exists. Use different title');
+    throw new APIError(409, "Slug already exists. Use different title");
   }
 
   // get current project for validation
   const currentProject = await Project.findById(req.params.id);
 
   if (!currentProject) {
-    throw new APIError(404, 'Project not found');
+    throw new APIError(404, "Project not found");
   }
 
   const isAdminOfProject = currentProject.admins.some(
-    (userId) => userId.toString() === req.user._id.toString()
+    (userId) => userId.toString() === req.user._id.toString(),
   );
 
   const isMemberOfProject = currentProject.admins.some(
-    (userId) => userId.toString() === req.user._id.toString()
+    (userId) => userId.toString() === req.user._id.toString(),
   );
 
   if (!isMemberOfProject && !isAdminOfProject) {
     throw new APIError(
       403,
-      'Unauthorized. Only admins and members can create documentation'
+      "Unauthorized. Only admins and members can create documentation",
     );
   }
 
   // create new documentation
   const newDocumentation = await Documentation.create({
-    title: title,
-    content: content,
+    title: sanitizedInputs.title,
+    content: sanitizedInputs.content,
     slug: currentSlug,
     author: req.user._id,
     project: currentProject._id,
@@ -142,43 +154,49 @@ const createDocumentation = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .json(new APIResponse(201, 'Documentation created', newDocumentation));
+    .json(new APIResponse(201, "Documentation created", newDocumentation));
 });
 
 const updateDocumentation = asyncHandler(async (req, res) => {
   if (!validator.isMongoId(req.params.id)) {
-    throw new APIError(400, 'Invalid Project ID');
+    throw new APIError(400, "Invalid Project ID");
   }
 
   if (!validator.isSlug(req.params.slug)) {
-    throw new APIError(400, 'Invalid Slug Found');
+    throw new APIError(400, "Invalid Slug Found");
   }
 
   const { title, content } = req.body;
+  const sanitizedInputs = {
+    title: title.trim().toString(),
+    content: content.trim().toString(),
+  };
 
-  if (!title && !content) {
-    return res.status(200).json(new APIResponse(200, 'Nothing to update'));
+  if (!sanitizedInputs.title && !sanitizedInputs.content) {
+    return res.status(200).json(new APIResponse(200, "Nothing to update"));
   }
 
+  const query = { slug: req.params.slug, project: req.params.id.toString() };
+
   // find if a documentation already exists with same slug within same project or not
-  const documentationWithSlug = await Documentation.findOne({
-    slug: req.params.slug,
-    project: req.params.id,
-  });
+  const documentationWithSlug = await Documentation.findOne(query).populate(
+    "author",
+    "name username",
+  );
 
   if (!documentationWithSlug) {
-    throw new APIError(404, 'Documentation not found.');
+    throw new APIError(404, "Documentation not found.");
   }
 
   // get current project for validation
   const currentProject = await Project.findById(req.params.id);
 
   if (!currentProject) {
-    throw new APIError(404, 'Project not found');
+    throw new APIError(404, "Project not found");
   }
 
   const isAdminOfProject = currentProject.admins.some(
-    (userId) => userId.toString() === req.user._id.toString()
+    (userId) => userId.toString() === req.user._id.toString(),
   );
 
   const isCreatorOfDocumentation =
@@ -187,30 +205,32 @@ const updateDocumentation = asyncHandler(async (req, res) => {
   if (!isCreatorOfDocumentation && !isAdminOfProject) {
     throw new APIError(
       403,
-      'Unauthorized. Only admins and members can create documentation'
+      "Unauthorized. Only admins and members can create documentation",
     );
   }
 
-  documentationWithSlug.title = title || documentationWithSlug.title;
-  documentationWithSlug.content = content || documentationWithSlug.content;
-  if (title) {
-    documentationWithSlug.slug = slug(title);
+  documentationWithSlug.title =
+    sanitizedInputs.title || documentationWithSlug.title;
+  documentationWithSlug.content =
+    sanitizedInputs.content || documentationWithSlug.content;
+  if (sanitizedInputs.title) {
+    documentationWithSlug.slug = slug(sanitizedInputs.title);
   }
 
   const updatedDocumentation = await documentationWithSlug.save();
 
   res
     .status(200)
-    .json(new APIResponse(200, 'Documentation updated', updatedDocumentation));
+    .json(new APIResponse(200, "Documentation updated", updatedDocumentation));
 });
 
 const deleteDocumentation = asyncHandler(async (req, res) => {
   if (!validator.isMongoId(req.params.id)) {
-    throw new APIError(400, 'Invalid Project ID');
+    throw new APIError(400, "Invalid Project ID");
   }
 
   if (!validator.isSlug(req.params.slug)) {
-    throw new APIError(400, 'Invalid slug id');
+    throw new APIError(400, "Invalid slug id");
   }
 
   const documentationWithSlug = await Documentation.findOne({
@@ -219,18 +239,18 @@ const deleteDocumentation = asyncHandler(async (req, res) => {
   });
 
   if (!documentationWithSlug) {
-    throw new APIError(404, 'Documentation not found.');
+    throw new APIError(404, "Documentation not found.");
   }
 
   // get current project for validation
   const currentProject = await Project.findById(req.params.id);
 
   if (!currentProject) {
-    throw new APIError(404, 'Project not found');
+    throw new APIError(404, "Project not found");
   }
 
   const isAdminOfProject = currentProject.admins.some(
-    (userId) => userId.toString() === req.user._id.toString()
+    (userId) => userId.toString() === req.user._id.toString(),
   );
 
   const isCreatorOfDocumentation =
@@ -239,17 +259,17 @@ const deleteDocumentation = asyncHandler(async (req, res) => {
   if (!isCreatorOfDocumentation && !isAdminOfProject) {
     throw new APIError(
       403,
-      'Unauthorized. Only admins and members can create documentation'
+      "Unauthorized. Only admins and members can create documentation",
     );
   }
 
   const deletedCurrentDocumentation = await documentationWithSlug.deleteOne();
 
   if (!deletedCurrentDocumentation.acknowledged) {
-    throw new APIError(500, 'Something went wrong deleting documentation');
+    throw new APIError(500, "Something went wrong deleting documentation");
   }
 
-  return res.status(200).json(new APIResponse(200, 'Documentation Deleted'));
+  return res.status(200).json(new APIResponse(200, "Documentation Deleted"));
 });
 
 export {

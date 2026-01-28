@@ -1,11 +1,12 @@
-import React from 'react';
+import React from "react";
 import {
   useGetReceivedInvitesQuery,
   useRespondToInvitationMutation,
-} from '@/slices/remote/projectApiSlice';
-import { ClipLoader } from 'react-spinners';
-import toast from 'react-hot-toast';
-import { FaInbox } from 'react-icons/fa6';
+} from "@/slices/remote/projectApiSlice";
+import { ClipLoader } from "react-spinners";
+import toast from "react-hot-toast";
+import { FaInbox } from "react-icons/fa6";
+import { Link } from "react-router";
 
 const InvitationPage = () => {
   const {
@@ -22,75 +23,90 @@ const InvitationPage = () => {
     try {
       await respondToInvite({ id: inviteId, data: { action } }).unwrap();
       toast.success(
-        `Invite ${action === 'Accepted' ? 'accepted' : 'declined'}!`
+        `Invite ${action === "Accepted" ? "accepted" : "declined"}!`,
       );
       refetch();
     } catch (err) {
-      toast.error(err?.data?.message || 'Failed to respond to invite');
+      toast.error(err?.data?.message || "Failed to respond to invite");
     }
   };
 
   return (
-    <div className='min-h-screen w-screen bg-white px-6 py-10 text-gray-800'>
-      <div className='flex items-center gap-2 mb-8'>
+    <div className="min-h-screen w-screen bg-white px-6 py-10 text-gray-800">
+      <Link to="/" className="text-blue-500">
+        Back to Home
+      </Link>
+      <div className="flex items-center gap-2 mb-8">
         <FaInbox size={26} />
-        <h1 className='text-3xl font-semibold'>Notifications</h1>
+        <h1 className="text-3xl font-semibold">Notifications</h1>
       </div>
 
       {isLoading ? (
-        <div className='flex justify-center items-center h-40'>
+        <div className="flex justify-center items-center h-40">
           <ClipLoader size={28} />
         </div>
       ) : invites.length === 0 ? (
-        <p className='text-sm text-gray-500'>You have no invitations.</p>
+        <div className="flex items-center justify-center">
+          <div className="w-full max-w-md rounded-2xl  bg-white px-6 py-8 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+              <FaInbox size={20} />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              No invitations yet
+            </h2>
+            <p className="mt-2 text-sm text-gray-500">
+              When someone invites you to a project, it will show up here.
+            </p>
+          </div>
+        </div>
       ) : (
-        <div className='space-y-6'>
+        <div className="space-y-6">
           {invites.map((invite) => {
-            const isAccepted = invite.status === 'Accepted';
-            const isDeclined = invite.status === 'Declined';
+            const isAccepted = invite.status === "Accepted";
+            const isDeclined = invite.status === "Declined";
             return (
               <div
                 key={invite._id}
                 className={`border border-gray-200 rounded-xl p-4 flex justify-between items-center ${
                   isAccepted
-                    ? 'border-green-500 cursor-not-allowed'
-                    : 'border-red-600 cursor-not-allowed'
+                    ? "border-green-500 cursor-not-allowed"
+                    : "border-red-600 cursor-not-allowed"
                 }`}
               >
                 <div>
-                  <p className='text-lg font-medium'>
-                    {invite.project?.name || 'Deleted Project'}
+                  <p className="text-lg font-medium">
+                    {invite.project?.name || "Deleted Project"}
                   </p>
-                  <p className='text-sm text-gray-500 mt-1'>
-                    Invited by {invite.invitedBy?.name || 'Someone'}
+                  <p className="text-sm text-gray-500 mt-1">
+                    Invited by {invite.invitedBy?.name || "Someone"}
                   </p>
-                  <p className='text-xs text-gray-400 mt-1'>
+                  <p className="text-xs text-gray-400 mt-1">
                     Status: {invite.status}
                   </p>
                 </div>
 
-                <div className='flex gap-3'>
+                <div className="flex gap-3">
                   <button
-                    onClick={() => handleResponse(invite._id, 'Accepted')}
+                    onClick={() => handleResponse(invite._id, "Accepted")}
                     disabled={isProcessing || isAccepted || isDeclined}
                     className={`px-4 py-1.5 text-sm rounded-lg text-white ${
                       isAccepted || isDeclined
-                        ? 'bg-gray-300 cursor-not-allowed'
-                        : 'bg-green-600 hover:bg-green-700'
+                        ? "bg-gray-300 cursor-not-allowed"
+                        : "bg-green-600 hover:bg-green-700"
                     }`}
                   >
-                    {isAccepted ? 'Accepted' : 'Accept'}
+                    {isAccepted ? "Accepted" : "Accept"}
                   </button>
                   <button
-                    onClick={() => handleResponse(invite._id, 'Declined')}
+                    onClick={() => handleResponse(invite._id, "Declined")}
                     disabled={isProcessing || isAccepted || isDeclined}
                     className={`px-4 py-1.5 text-sm rounded-lg text-white ${
                       isAccepted || isDeclined
-                        ? 'bg-gray-300 cursor-not-allowed'
-                        : 'bg-red-500 hover:bg-red-600'
+                        ? "bg-gray-300 cursor-not-allowed"
+                        : "bg-red-500 hover:bg-red-600"
                     }`}
                   >
-                    {isDeclined ? 'Declined' : 'Decline'}
+                    {isDeclined ? "Declined" : "Decline"}
                   </button>
                 </div>
               </div>
